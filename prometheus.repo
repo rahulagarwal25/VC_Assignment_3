@@ -1,0 +1,5 @@
+[prometheus]
+name=Prometheus Repo
+baseurl=https://packagecloud.io/prometheus-rpm/release/el/7/\$basearch
+enabled=1
+gpgcheck=0

@@ -1,0 +1,6 @@
+route:
+  receiver: 'scale-up'
+receivers:
+  - name: 'scale-up'
+    webhook_configs:
+      - url: 'http://localhost:5001/autoscale'

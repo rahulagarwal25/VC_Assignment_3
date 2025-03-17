@@ -1,0 +1,6 @@
+[virtualbox]
+name=VirtualBox Repository
+baseurl=https://download.virtualbox.org/virtualbox/rpm/el/8/\$basearch
+enabled=1
+gpgcheck=1
+gpgkey=https://www.virtualbox.org/download/oracle_vbox.asc
