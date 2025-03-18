@@ -1,0 +1,84 @@
+cd /tmp
+
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y docker.io python3 python3-pip git curl tar
+sudo systemctl enable docker
+sudo systemctl start docker
+sudo apt install python3-flask
+
+curl -LO https://github.com/prometheus/prometheus/releases/download/v3.2.1/prometheus-3.2.1.linux-amd64.tar.gz
+curl -LO https://github.com/prometheus/alertmanager/releases/download/v0.28.1/alertmanager-0.28.1.linux-amd64.tar.gz
+curl -LO https://github.com/prometheus/node_exporter/releases/download/v1.9.0/node_exporter-1.9.0.linux-amd64.tar.gz
+
+sudo useradd --no-create-home --shell /bin/false prometheus
+
+tar -xvzf prometheus-linux-amd64.tar.gz
+sudo mv prometheus-linux-amd64/prometheus /usr/local/bin/
+sudo mv prometheus-linux-amd64/promtool /usr/local/bin/
+
+sudo mkdir -p /etc/prometheus /var/lib/prometheus
+sudo chown prometheus:prometheus /var/lib/prometheus
+
+sudo systemctl daemon-reload
+sudo systemctl start prometheus
+sudo systemctl enable prometheus
+
+
+tar xvf node_exporter-*.tar.gz
+sudo mv node_exporter-*/node_exporter /usr/local/bin/
+rm -rf node_exporter-*
+
+sudo systemctl daemon-reload
+sudo systemctl enable node_exporter
+sudo systemctl start node_exporter
+
+tar xvf alertmanager-*.tar.gz
+sudo mv alertmanager-*/alertmanager /usr/local/bin/
+sudo mv alertmanager-*/amtool /usr/local/bin/
+rm -rf alertmanager-*
+
+sudo systemctl daemon-reload
+sudo systemctl enable alertmanager
+sudo systemctl start alertmanager
+
+sudo apt install -y software-properties-common
+sudo add-apt-repository "deb https://packages.grafana.com/oss/deb stable main"
+
+wget -q -O - https://packages.grafana.com/gpg.key | sudo apt-key add -
+
+sudo apt update
+sudo apt install -y grafana
+
+sudo systemctl start grafana-server
+sudo systemctl enable grafana-server
+
+echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | sudo tee /etc/apt/sources.list.d/google-cloud-sdk.list
+curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo tee /usr/share/keyrings/cloud.google.gpg > /dev/null
+
+sudo apt update && sudo apt install -y google-cloud-sdk
+
+
+
+sudo apt update && sudo apt install -y apt-transport-https ca-certificates gnupg curl
+
+gcloud compute ssh python-app-instance --zone=us-central1-c --command "gcloud auth configure-docker"
+
+gcloud projects add-iam-policy-binding astute-charter-213919 \
+  --member=serviceAccount:g24ai1058-service@astute-charter-213919.iam.gserviceaccount.com \
+  --role=roles/artifactregistry.reader
+
+gcloud projects add-iam-policy-binding astute-charter-213919 \
+  --member=serviceAccount:g24ai1058-service@astute-charter-213919.iam.gserviceaccount.com \
+  --role=roles/storage.objectViewer
+
+gcloud compute instances set-service-account python-app-instance \
+  --zone=us-central1-c \
+  --service-account=g24ai1058-service@astute-charter-213919.iam.gserviceaccount.com \
+  --scopes=https://www.googleapis.com/auth/cloud-platform
+
+gcloud compute instances describe python-app-instance --zone=us-central1-c --format="get(networkInterfaces[0].accessConfigs[0].natIP)"
+
+gcloud compute firewall-rules create allow-python-app --allow tcp:5000 --source-ranges=0.0.0.0/0 --target-tags=python-app
+
+gcloud compute instances add-tags python-app-instance --zone=us-central1-c --tags=python-app
+

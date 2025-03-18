@@ -1,6 +1,10 @@
 #!/bin/bash
 INSTANCE_NAME="python-app-instance"
-ZONE="us-central1-a"
+ZONE="us-central1-c"
+
+gcloud auth configure-docker --quiet
+docker tag python-app gcr.io/astute-charter-213919/python-app
+docker push gcr.io/astute-charter-213919/python-app
 
 gcloud compute ssh $INSTANCE_NAME --zone=$ZONE --command "
   if ! command -v docker &> /dev/null; then
